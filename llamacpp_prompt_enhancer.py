@@ -56,7 +56,7 @@ class LlamaCppPromptEnhancer:
                 "base_url": ("STRING", {"default": DEFAULT_BASE_URL}),
                 "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "max_tokens": ("INT", {"default": 512, "min": 16, "max": 8192, "step": 16}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF, "control_after_generate": True}),
                 "disable_thinking": ("BOOLEAN", {"default": True}),
             },
             "optional": {
