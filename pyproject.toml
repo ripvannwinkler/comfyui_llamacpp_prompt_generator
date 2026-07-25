@@ -1,0 +1,11 @@
+[project]
+name = "comfyui_llamacpp_prompt_generator"
+description = "Enhance Stable Diffusion prompts using a local llama.cpp router-mode server."
+version = "0.1.0"
+license = "MIT"
+dependencies = ["requests>=2.31"]
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "LlamaCpp Prompt Enhancer"
+Icon = ""
