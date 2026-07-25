@@ -56,6 +56,7 @@ class LlamaCppPromptEnhancer:
                 "base_url": ("STRING", {"default": DEFAULT_BASE_URL}),
                 "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "max_tokens": ("INT", {"default": 512, "min": 16, "max": 8192, "step": 16}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
                 "disable_thinking": ("BOOLEAN", {"default": True}),
             },
             "optional": {
@@ -69,7 +70,7 @@ class LlamaCppPromptEnhancer:
     CATEGORY = "llamacpp"
 
     def generate(self, prompt, model, base_url, temperature, max_tokens,
-                 disable_thinking, extra_system_prompt=""):
+                 seed, disable_thinking, extra_system_prompt=""):
         if not prompt or not prompt.strip():
             raise ValueError("LlamaCpp Prompt Enhancer: 'prompt' input is empty.")
 
@@ -90,6 +91,7 @@ class LlamaCppPromptEnhancer:
             ],
             "temperature": temperature,
             "max_tokens": max_tokens,
+            "seed": seed,
             "stream": False,
         }
         if disable_thinking:
