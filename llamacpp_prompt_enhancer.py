@@ -1,6 +1,10 @@
+import base64
+import io
 import re
 
+import numpy as np
 import requests
+from PIL import Image
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 DEFAULT_TIMEOUT_MODELS = 3       # seconds, for populating the COMBO at node-def time
@@ -45,6 +49,25 @@ def _build_system_prompt(extra_system_prompt: str) -> str:
     return f"{DEFAULT_SYSTEM_PROMPT}\n\n{extra}"
 
 
+def _image_tensor_to_data_uri(image_tensor, max_dimension: int) -> str:
+    try:
+        frame = image_tensor[0]
+        arr = (frame.cpu().numpy() * 255.0).clip(0, 255).astype(np.uint8)
+        img = Image.fromarray(arr, mode="RGB")
+
+        if max(img.width, img.height) > max_dimension:
+            img.thumbnail((max_dimension, max_dimension), Image.LANCZOS)
+
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=90)
+        b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+        return f"data:image/jpeg;base64,{b64}"
+    except Exception as exc:
+        raise ValueError(
+            f"LlamaCpp Prompt Enhancer: failed to encode input image: {exc}"
+        ) from exc
+
+
 class LlamaCppPromptEnhancer:
     @classmethod
     def INPUT_TYPES(cls):
@@ -61,6 +84,8 @@ class LlamaCppPromptEnhancer:
             },
             "optional": {
                 "extra_system_prompt": ("STRING", {"multiline": True, "default": ""}),
+                "image": ("IMAGE",),
+                "max_image_dimension": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
             },
         }
 
@@ -74,7 +99,8 @@ class LlamaCppPromptEnhancer:
         return seed
 
     def generate(self, prompt, model, base_url, temperature, max_tokens,
-                 seed, disable_thinking, extra_system_prompt=""):
+                 seed, disable_thinking, extra_system_prompt="",
+                 image=None, max_image_dimension=1024):
         if not prompt or not prompt.strip():
             raise ValueError("LlamaCpp Prompt Enhancer: 'prompt' input is empty.")
 
@@ -86,12 +112,22 @@ class LlamaCppPromptEnhancer:
             )
 
         system_prompt = _build_system_prompt(extra_system_prompt)
+
+        if image is not None:
+            data_uri = _image_tensor_to_data_uri(image, max_image_dimension)
+            user_content = [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": data_uri}},
+            ]
+        else:
+            user_content = prompt
+
         url = f"{base_url.rstrip('/')}/v1/chat/completions"
         payload = {
             "model": model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
+                {"role": "user", "content": user_content},
             ],
             "temperature": temperature,
             "max_tokens": max_tokens,

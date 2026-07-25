@@ -37,6 +37,8 @@ LLM-enhanced version, suitable for feeding into an image-generation prompt.
 | `seed` | INT | Sampler seed sent to the server. Uses ComfyUI's standard `control_after_generate` widget (fixed/increment/decrement/randomize) — set it to "randomize" for varied output each run, or "fixed" for reproducible output. |
 | `disable_thinking` | BOOLEAN | Default `True`. Sends `chat_template_kwargs: {"enable_thinking": false}` to suppress reasoning-model "thinking" output. |
 | `extra_system_prompt` | STRING (multiline, optional) | Appended after the built-in system prompt; never replaces it. |
+| `image` | IMAGE (optional) | Reference image sent to the model alongside the text prompt. Only the first frame of a batch is used. Requires a vision-capable model on the server (loaded with an `mmproj` projector) — passing an image to a text-only model will produce a server error. |
+| `max_image_dimension` | INT (optional) | Default `1024`. The `image` is downscaled (preserving aspect ratio) if its largest side exceeds this, then sent as a JPEG data URI, to keep request payloads reasonable. |
 
 **Output**
 
