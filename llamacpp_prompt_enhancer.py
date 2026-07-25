@@ -1,4 +1,3 @@
-import random
 import re
 
 import requests
@@ -58,7 +57,6 @@ class LlamaCppPromptEnhancer:
                 "temperature": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 2.0, "step": 0.05}),
                 "max_tokens": ("INT", {"default": 512, "min": 16, "max": 8192, "step": 16}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFFFFFFFFFF}),
-                "randomize_seed": ("BOOLEAN", {"default": True}),
                 "disable_thinking": ("BOOLEAN", {"default": True}),
             },
             "optional": {
@@ -71,22 +69,10 @@ class LlamaCppPromptEnhancer:
     FUNCTION = "generate"
     CATEGORY = "llamacpp"
 
-    @classmethod
-    def IS_CHANGED(cls, *args, randomize_seed=False, **kwargs):
-        if randomize_seed:
-            # With randomize_seed on, the seed widget value itself may not
-            # change between runs (e.g. it's left at 0), so force a re-run
-            # each time rather than letting ComfyUI replay a cached result.
-            return float("nan")
-        return None
-
     def generate(self, prompt, model, base_url, temperature, max_tokens,
-                 seed, randomize_seed, disable_thinking, extra_system_prompt=""):
+                 seed, disable_thinking, extra_system_prompt=""):
         if not prompt or not prompt.strip():
             raise ValueError("LlamaCpp Prompt Enhancer: 'prompt' input is empty.")
-
-        if randomize_seed:
-            seed = random.randint(1, 2**31 - 1)
 
         if model == FALLBACK_MODEL_CHOICE:
             raise ValueError(
