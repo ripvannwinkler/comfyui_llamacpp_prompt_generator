@@ -1,3 +1,4 @@
+import random
 import re
 
 import requests
@@ -69,10 +70,22 @@ class LlamaCppPromptEnhancer:
     FUNCTION = "generate"
     CATEGORY = "llamacpp"
 
+    @classmethod
+    def IS_CHANGED(cls, *args, **kwargs):
+        # seed=0 means "randomize every run" (see generate()), but the
+        # node's inputs never change in that case, so ComfyUI's execution
+        # cache would otherwise skip calling the server and just replay
+        # the previous cached output. Force a re-run every time instead;
+        # a nonzero seed still produces the same result each run anyway.
+        return float("nan")
+
     def generate(self, prompt, model, base_url, temperature, max_tokens,
                  seed, disable_thinking, extra_system_prompt=""):
         if not prompt or not prompt.strip():
             raise ValueError("LlamaCpp Prompt Enhancer: 'prompt' input is empty.")
+
+        if seed == 0:
+            seed = random.randint(1, 2**31 - 1)
 
         if model == FALLBACK_MODEL_CHOICE:
             raise ValueError(

@@ -34,7 +34,7 @@ LLM-enhanced version, suitable for feeding into an image-generation prompt.
 | `base_url` | STRING | Default `http://127.0.0.1:8080`. |
 | `temperature` | FLOAT | Default `0.7`. |
 | `max_tokens` | INT | Default `512`. |
-| `seed` | INT | Passed through to the server's sampler. ComfyUI attaches its standard randomize/increment/fixed control to this widget, so by default each run gets a fresh seed (and a fresh, non-cached result). Set "fixed" for reproducible output. |
+| `seed` | INT | Default `0` means "pick a fresh random seed every run" (handled internally, since ComfyUI's own control-after-generate widget isn't reliable across all frontend builds). Set a nonzero value for reproducible output. The node always re-executes rather than reusing a cached result. |
 | `disable_thinking` | BOOLEAN | Default `True`. Sends `chat_template_kwargs: {"enable_thinking": false}` to suppress reasoning-model "thinking" output. |
 | `extra_system_prompt` | STRING (multiline, optional) | Appended after the built-in system prompt; never replaces it. |
 
