@@ -42,11 +42,7 @@ def _fetch_model_list(base_url: str, timeout: float = DEFAULT_TIMEOUT_MODELS) ->
         return [FALLBACK_MODEL_CHOICE]
 
 
-def _build_system_prompt(extra_system_prompt: str) -> str:
-    extra = (extra_system_prompt or "").strip()
-    if not extra:
-        return DEFAULT_SYSTEM_PROMPT
-    return f"{DEFAULT_SYSTEM_PROMPT}\n\n{extra}"
+
 
 
 def _image_tensor_to_data_uri(image_tensor, max_dimension: int) -> str:
@@ -83,7 +79,7 @@ class LlamaCppPromptEnhancer:
                 "disable_thinking": ("BOOLEAN", {"default": True}),
             },
             "optional": {
-                "extra_system_prompt": ("STRING", {"multiline": True, "default": ""}),
+                "system_prompt": ("STRING", {"multiline": True, "default": DEFAULT_SYSTEM_PROMPT}),
                 "image": ("IMAGE",),
                 "max_image_dimension": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
             },
@@ -99,8 +95,8 @@ class LlamaCppPromptEnhancer:
         return seed
 
     def generate(self, prompt, model, base_url, temperature, max_tokens,
-                 seed, disable_thinking, extra_system_prompt="",
-                 image=None, max_image_dimension=1024):
+                  seed, disable_thinking, system_prompt=DEFAULT_SYSTEM_PROMPT,
+                  image=None, max_image_dimension=1024):
         if not prompt or not prompt.strip():
             raise ValueError("LlamaCpp Prompt Enhancer: 'prompt' input is empty.")
 
@@ -111,7 +107,8 @@ class LlamaCppPromptEnhancer:
                 "base_url and refresh node definitions (ComfyUI menu > Refresh)."
             )
 
-        system_prompt = _build_system_prompt(extra_system_prompt)
+        if not system_prompt or not system_prompt.strip():
+            system_prompt = DEFAULT_SYSTEM_PROMPT
 
         if image is not None:
             data_uri = _image_tensor_to_data_uri(image, max_image_dimension)
