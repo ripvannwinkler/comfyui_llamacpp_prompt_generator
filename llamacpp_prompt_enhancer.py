@@ -180,8 +180,11 @@ class LlamaCppPromptEnhancer:
         image=None,
         max_image_dimension=1024,
     ):
-        if not prompt or not prompt.strip():
-            raise ValueError("LlamaCpp Prompt Enhancer: 'prompt' input is empty.")
+        if (not prompt or not prompt.strip()) and image is None:
+            raise ValueError(
+                "LlamaCpp Prompt Enhancer: 'prompt' is empty and no image was "
+                "provided. Supply either a prompt or an image input."
+            )
 
         if model == FALLBACK_MODEL_CHOICE:
             raise ValueError(
