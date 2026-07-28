@@ -1,6 +1,7 @@
 import base64
 import io
 import re
+import time
 
 import numpy as np
 import requests
@@ -9,6 +10,8 @@ from PIL import Image
 DEFAULT_BASE_URL = "http://127.0.0.1:8080"
 DEFAULT_TIMEOUT_MODELS = 3  # seconds, for populating the COMBO at node-def time
 DEFAULT_TIMEOUT_CHAT = 120  # seconds, for the blocking generation call
+MAX_RETRIES = 2  # retries on ConnectionError (e.g., model swap)
+RETRY_DELAY = 1  # seconds between retries
 FALLBACK_MODEL_CHOICE = "(server unreachable - enter base_url and refresh)"
 
 DEFAULT_SYSTEM_PROMPT = (
@@ -270,24 +273,30 @@ class LlamaCppPromptEnhancer:
         if disable_thinking:
             payload["chat_template_kwargs"] = {"enable_thinking": False}
 
-        try:
-            resp = requests.post(url, json=payload, timeout=DEFAULT_TIMEOUT_CHAT)
-            resp.raise_for_status()
-        except requests.exceptions.ConnectionError as exc:
-            raise RuntimeError(
-                f"LlamaCpp Prompt Enhancer: could not connect to server at "
-                f"'{base_url}'. Is the llama.cpp router running? ({exc})"
-            ) from exc
-        except requests.exceptions.Timeout as exc:
-            raise RuntimeError(
-                f"LlamaCpp Prompt Enhancer: request to '{base_url}' timed out "
-                f"after {DEFAULT_TIMEOUT_CHAT}s."
-            ) from exc
-        except requests.exceptions.HTTPError as exc:
-            body = exc.response.text[:500] if exc.response is not None else str(exc)
-            raise RuntimeError(
-                f"LlamaCpp Prompt Enhancer: server returned an error: {body}"
-            ) from exc
+        for attempt in range(MAX_RETRIES + 1):
+            try:
+                resp = requests.post(url, json=payload, timeout=DEFAULT_TIMEOUT_CHAT)
+                resp.raise_for_status()
+                break
+            except requests.exceptions.ConnectionError as exc:
+                if attempt < MAX_RETRIES:
+                    time.sleep(RETRY_DELAY)
+                    continue
+                raise RuntimeError(
+                    f"LlamaCpp Prompt Enhancer: could not connect to server at "
+                    f"'{base_url}' after {MAX_RETRIES} retries. Is the llama.cpp "
+                    f"router running? ({exc})"
+                ) from exc
+            except requests.exceptions.Timeout as exc:
+                raise RuntimeError(
+                    f"LlamaCpp Prompt Enhancer: request to '{base_url}' timed out "
+                    f"after {DEFAULT_TIMEOUT_CHAT}s."
+                ) from exc
+            except requests.exceptions.HTTPError as exc:
+                body = exc.response.text[:500] if exc.response is not None else str(exc)
+                raise RuntimeError(
+                    f"LlamaCpp Prompt Enhancer: server returned an error: {body}"
+                ) from exc
 
         data = resp.json()
         choices = data.get("choices") or []
