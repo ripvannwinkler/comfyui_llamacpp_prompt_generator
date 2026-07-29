@@ -191,6 +191,7 @@ class LlamaCppPromptEnhancer:
                     },
                 ),
                 "disable_thinking": ("BOOLEAN", {"default": True}),
+                "enable_enhancement": ("BOOLEAN", {"default": True}),
             },
             "optional": {
                 "system_prompt": (
@@ -224,11 +225,15 @@ class LlamaCppPromptEnhancer:
         max_tokens,
         seed,
         disable_thinking,
+        enable_enhancement,
         system_prompt=DEFAULT_SYSTEM_PROMPT,
         style="none",
         image=None,
         max_image_dimension=1024,
     ):
+        if not enable_enhancement:
+            return (prompt,)
+
         if (not prompt or not prompt.strip()) and image is None:
             raise ValueError(
                 "LlamaCpp Prompt Enhancer: 'prompt' is empty and no image was "
